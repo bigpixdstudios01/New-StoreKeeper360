@@ -1,0 +1,3652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    // Runs before anything renders, so there's no flash of the wrong theme.
+    (function () {
+      const saved = localStorage.getItem("sk_theme");
+      const theme = saved || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StoreKeeper360 — Retail Inventory Manager</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2056%2056%22%20fill%3D%22none%22%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2256%22%20height%3D%2256%22%20rx%3D%2214%22%20fill%3D%22url%28%23sk-grad-icon%29%22/%3E%0A%20%20%3Cpath%20d%3D%22M15%2024%20L28%2017%20L41%2024%20L41%2041%20L28%2048%20L15%2041%20Z%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222.4%22%20stroke-linejoin%3D%22round%22%20fill%3D%22none%22/%3E%0A%20%20%3Cpath%20d%3D%22M15%2024%20L28%2031%20L41%2024%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222.4%22%20stroke-linejoin%3D%22round%22%20fill%3D%22none%22/%3E%0A%20%20%3Cpath%20d%3D%22M28%2031%20L28%2048%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222.4%22%20stroke-linejoin%3D%22round%22%20fill%3D%22none%22/%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22sk-grad-icon%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%2256%22%20y2%3D%2256%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2310B981%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23059669%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%3C/defs%3E%0A%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+/* ═══════════════════════════════════════════════════════════════════════════════
+   StoreKeeper360 — style.css
+   Palette: deep-dark dashboard, emerald accent, mono data font
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── TOKENS ─────────────────────────────────────────────────────────────────── */
+:root {
+  --bg:          #0D1117;
+  --surface:     #161B22;
+  --surface2:    #21262D;
+  --border:      #30363D;
+  --accent:      #10B981;
+  --accent-dim:  #059669;
+  --accent-glow: rgba(16, 185, 129, 0.15);
+  --danger:      #EF4444;
+  --danger-dim:  rgba(239, 68, 68, 0.15);
+  --warn:        #F59E0B;
+  --warn-dim:    rgba(245, 158, 11, 0.15);
+  --info:        #3B82F6;
+  --text:        #E6EDF3;
+  --text-2:      #8B949E;
+  --text-3:      #484F58;
+  --radius:      10px;
+  --radius-sm:   6px;
+  --sidebar-w:   240px;
+  --shadow:      0 4px 24px rgba(0,0,0,0.4);
+}
+
+/* ── LIGHT THEME ─────────────────────────────────────────────────────────────── */
+/* Toggled by adding data-theme="light" to <html> (see app.js applyTheme()).
+   Every color in this file is a variable, so this is the only override block needed. */
+html[data-theme="light"] {
+  --bg:          #F6F8FA;
+  --surface:     #FFFFFF;
+  --surface2:    #F0F2F5;
+  --border:      #D8DEE4;
+  --accent:      #059669;
+  --accent-dim:  #047857;
+  --accent-glow: rgba(5, 150, 105, 0.10);
+  --danger:      #DC2626;
+  --danger-dim:  rgba(220, 38, 38, 0.10);
+  --warn:        #D97706;
+  --warn-dim:    rgba(217, 119, 6, 0.12);
+  --info:        #2563EB;
+  --text:        #1F2328;
+  --text-2:      #57606A;
+  --text-3:      #8B949E;
+  --shadow:      0 4px 20px rgba(31,35,40,0.10);
+}
+
+/* ── RESET & BASE ────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 14px; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+body, .sidebar, .card, .topbar, .modal, .kpi-card, .auth-card, input, select, textarea {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* ── THEME TOGGLE BUTTON ───────────────────────────────────────────────────────── */
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hidden { display: none !important; }
+
+/* ── SCROLLBAR ───────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+/* ════════════════════════════════════════════════ AUTH SCREEN ══════════════════ */
+.auth-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(16,185,129,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.04) 0%, transparent 50%),
+    var(--bg);
+}
+
+.auth-brand {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.brand-logo {
+  height: 32px;
+  width: auto;
+  margin-bottom: 14px;
+  filter: drop-shadow(0 0 16px rgba(16,185,129,0.25));
+}
+
+.auth-brand h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent) 0%, #34D399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.auth-brand p {
+  color: var(--text-2);
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.auth-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 440px;
+  padding: 28px;
+  box-shadow: var(--shadow);
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 24px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.auth-error {
+  background: var(--danger-dim);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+.link-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-btn:hover { text-decoration: underline; }
+
+.btn-link-forgot {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 14px;
+  transition: color 0.15s;
+}
+
+.btn-link-forgot:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.modal-hint {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.fp-success {
+  background: var(--accent-glow);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* ════════════════════════════════════════════════ LAYOUT ═══════════════════════ */
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 100;
+  transition: transform 0.25s ease;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo {
+  height: 22px;
+  width: auto;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.nav-item:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: var(--accent-glow);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #34D399);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.user-name {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-store {
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-logout {
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.btn-logout:hover { color: var(--danger); }
+
+/* ── MAIN CONTENT ────────────────────────────────────────────────────────────── */
+.main-content {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TOPBAR ──────────────────────────────────────────────────────────────────── */
+.topbar {
+  height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.menu-toggle {
+  display: none;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.page-title {
+  font-size: 16px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.date-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ── PAGES ───────────────────────────────────────────────────────────────────── */
+.page {
+  display: none;
+  padding: 24px;
+  flex: 1;
+}
+
+.page.active { display: block; }
+
+/* ════════════════════════════════════════════════ DASHBOARD ════════════════════ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.monthly-report-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--accent-glow);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.kpi-revenue::before { background: linear-gradient(90deg, var(--accent), #34D399); }
+.kpi-profit::before  { background: linear-gradient(90deg, #3B82F6, #60A5FA); }
+.kpi-stock::before   { background: linear-gradient(90deg, var(--warn), #FCD34D); }
+.kpi-month::before   { background: linear-gradient(90deg, #A855F7, #C084FC); }
+
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.kpi-sub {
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+/* ── DASHBOARD GRID ──────────────────────────────────────────────────────────── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+.chart-card { grid-column: span 1; }
+
+/* ════════════════════════════════════════════════ CARDS ════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.card-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.chart-wrap {
+  position: relative;
+  height: 220px;
+}
+
+.chart-wrap-sm { height: 200px; }
+
+/* ════════════════════════════════════════════════ TABLES ═══════════════════════ */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid rgba(48,54,61,0.5);
+  vertical-align: middle;
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--surface2); }
+
+.data-table .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+/* ════════════════════════════════════════════════ FORMS ════════════════════════ */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.form-group input:focus,
+.form-group select:focus { border-color: var(--accent); }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ════════════════════════════════════════════════ BUTTONS ══════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.btn-primary:hover { background: var(--accent-dim); }
+
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-2);
+  border-color: transparent;
+}
+
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-danger:hover { background: var(--danger-dim); }
+
+.btn-full { width: 100%; }
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.btn-icon {
+  padding: 6px 8px;
+  font-size: 14px;
+}
+
+/* ════════════════════════════════════════════════ PAGE ACTIONS ═════════════════ */
+.page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.search-group input[type="text"],
+.search-group input[type="date"],
+.search-group select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.search-group input:focus,
+.search-group select:focus { border-color: var(--accent); }
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+/* ════════════════════════════════════════════════ BADGES & STATUS ══════════════ */
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-ok     { background: rgba(16,185,129,0.15); color: var(--accent); }
+.badge-warn   { background: var(--warn-dim);       color: var(--warn); }
+.badge-danger { background: var(--danger-dim);     color: var(--danger); }
+.badge-info   { background: rgba(59,130,246,0.15); color: var(--info); }
+.badge        { background: var(--surface2);        color: var(--text-2); }
+
+/* ════════════════════════════════════════════════ LISTS ════════════════════════ */
+.alert-list { display: flex; flex-direction: column; gap: 8px; }
+
+.alert-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--warn);
+}
+
+.alert-item.critical { border-left-color: var(--danger); }
+
+.alert-product { font-size: 12px; font-weight: 600; }
+.alert-qty { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--warn); }
+.alert-item.critical .alert-qty { color: var(--danger); }
+
+.top-list { display: flex; flex-direction: column; gap: 8px; }
+
+.top-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.top-item:last-child { border-bottom: none; }
+
+.top-rank {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  width: 18px;
+}
+
+.top-name { flex: 1; font-size: 12px; font-weight: 500; }
+.top-val  { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); }
+
+.empty-state {
+  text-align: center;
+  color: var(--text-2);
+  padding: 24px;
+  font-size: 13px;
+}
+
+/* ════════════════════════════════════════════════ SALE PAGE ════════════════════ */
+.sale-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+}
+
+.sale-search { position: relative; margin-bottom: 16px; }
+.sale-search input { width: 100%; }
+
+.product-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0; right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  z-index: 200;
+  max-height: 240px;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+
+.product-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.product-option:hover { background: var(--surface2); }
+
+.po-name { font-size: 13px; font-weight: 500; }
+.po-price { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); }
+.po-stock { font-size: 11px; color: var(--text-2); }
+
+.cart-items {
+  min-height: 120px;
+  max-height: 280px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.cart-item {
+  display: grid;
+  grid-template-columns: 1fr 90px 90px 32px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.ci-name   { font-size: 12px; font-weight: 500; }
+.ci-stock  { font-size: 11px; color: var(--text-2); }
+.ci-price  { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+.cart-item input[type="number"] {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 5px 8px;
+  font-size: 12px;
+  width: 100%;
+  outline: none;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.cart-item input:focus { border-color: var(--accent); }
+
+.ci-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 16px;
+  transition: color 0.15s;
+}
+
+.ci-remove:hover { color: var(--danger); }
+
+.sale-totals {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  margin-bottom: 16px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+  color: var(--text-2);
+}
+
+.total-profit {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.total-profit span:last-child {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── PAYMENT METHOD SELECTOR ──────────────────────────────────────────────────── */
+.payment-method-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.payment-method-btn {
+  padding: 10px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.payment-method-btn:hover {
+  border-color: var(--accent);
+}
+
+.payment-method-btn.active {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── SALE SUMMARY CARD ────────────────────────────────────────────────────────── */
+.sale-summary-card { padding: 20px; }
+
+.summary-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-stat:last-of-type { border-bottom: none; }
+.summary-label { font-size: 12px; color: var(--text-2); font-weight: 500; }
+
+.summary-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.pnl-bar-wrap {
+  height: 10px;
+  background: var(--danger-dim);
+  border-radius: 5px;
+  margin: 16px 0 6px;
+  overflow: hidden;
+}
+
+.pnl-bar {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--accent), #34D399);
+  transition: width 0.5s ease;
+}
+
+.pnl-label {
+  font-size: 11px;
+  color: var(--text-2);
+  text-align: right;
+}
+
+/* ════════════════════════════════════════════════ REPORTS PAGE ═════════════════ */
+.reports-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.reports-filters input,
+.reports-filters select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.reports-filters input:focus,
+.reports-filters select:focus { border-color: var(--accent); }
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.span-2 { grid-column: span 2; }
+
+/* ════════════════════════════════════════════════ SETTINGS PAGE ════════════════ */
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  max-width: 900px;
+}
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+/* ════════════════════════════════════════════════ MODALS ═══════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 560px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-sm { max-width: 380px; }
+.modal-receipt { max-width: 420px; }
+
+/* ── RECEIPT ───────────────────────────────────────────────────────────────────── */
+.receipt-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+
+.receipt-tab {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.receipt-tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.receipt-print-area {
+  padding: 0 22px 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.receipt-paper {
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 18px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.receipt-store-name {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.receipt-subtitle {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+.receipt-divider {
+  border: none;
+  border-top: 1px dashed var(--border);
+  margin: 10px 0;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.receipt-row.muted { color: var(--text-2); font-size: 11px; }
+
+.receipt-item-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.receipt-item-name { flex: 1; }
+
+.receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 13px;
+  padding-top: 6px;
+}
+
+.receipt-greeting {
+  text-align: center;
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--text-2);
+  font-style: italic;
+}
+
+/* ── PRINT MODE ────────────────────────────────────────────────────────────────── */
+@media print {
+  body * { visibility: hidden; }
+  .receipt-print-area, .receipt-print-area * { visibility: visible; }
+  .receipt-print-area {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+  }
+  .receipt-paper { border: none; }
+  .receipt-paper.hidden { display: none !important; }
+  .no-print { display: none !important; }
+  .modal-overlay { position: static; background: none; padding: 0; }
+  .modal { box-shadow: none; max-width: none; }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 { font-size: 15px; font-weight: 600; }
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  font-size: 16px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.modal-close:hover { color: var(--danger); }
+
+.modal-body {
+  padding: 20px 22px;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+}
+
+/* ════════════════════════════════════════════════ TOAST ════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+  z-index: 999;
+  transform: translateY(10px);
+  opacity: 0;
+  transition: all 0.25s;
+  max-width: 340px;
+  border-left: 4px solid var(--accent);
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.error { border-left-color: var(--danger); }
+.toast.warn  { border-left-color: var(--warn); }
+
+/* ════════════════════════════════════════════════ RESPONSIVE ═══════════════════ */
+@media (max-width: 1100px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .reports-grid { grid-template-columns: 1fr; }
+  .span-2 { grid-column: span 1; }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(calc(-1 * var(--sidebar-w)));
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+  }
+  .main-content { margin-left: 0; }
+  .menu-toggle { display: block; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .sale-layout { grid-template-columns: 1fr; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+  .page { padding: 14px; }
+  .page-actions { flex-direction: column; align-items: stretch; }
+}
+
+/* ── profit/loss colour helpers ──────────────────────────────────────────────── */
+.profit  { color: var(--accent); }
+.loss    { color: var(--danger); }
+.neutral { color: var(--text-2); }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════ AUTH SCREEN ══════════ -->
+<div id="auth-screen" class="auth-screen">
+  <div class="auth-brand">
+    <svg class="brand-logo" viewBox="0 0 260 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="30" font-family="'Inter', system-ui, sans-serif" font-size="26" font-weight="700" fill="#E6EDF3">Store<tspan fill="#10B981">Keeper</tspan><tspan fill="#E6EDF3">360</tspan></text>
+</svg>
+    <p>Smart Inventory for Smart Retailers</p>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="login-form" class="auth-form">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="login-email" placeholder="you@store.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" />
+      </div>
+      <div style="text-align:right;margin-bottom:14px;">
+        <button type="button" class="link-btn" onclick="openForgotPasswordModal()">Forgot password?</button>
+      </div>
+      <div id="login-error" class="auth-error hidden"></div>
+      <button class="btn btn-primary btn-full" onclick="handleLogin()">Sign In</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="register-form" class="auth-form hidden">
+      <div id="register-request-view">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="reg-name" placeholder="Your Name" />
+          </div>
+          <div class="form-group">
+            <label>Store Name</label>
+            <input type="text" id="reg-store" placeholder="My Shop" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="reg-email" placeholder="you@store.com" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="reg-password" placeholder="Min. 6 characters" />
+        </div>
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <input type="password" id="reg-password-confirm" placeholder="Re-enter your password" />
+        </div>
+        <div class="form-group">
+          <label>Currency Symbol</label>
+          <input type="text" id="reg-currency" placeholder="₦" value="₦" maxlength="3" />
+        </div>
+        <div id="reg-error" class="auth-error hidden"></div>
+        <button class="btn btn-primary btn-full" onclick="handleRegister()">Create Account</button>
+      </div>
+
+      <div id="register-confirm-view" class="hidden">
+        <div style="text-align:center;padding:12px 0;">
+          <div style="font-size:32px;margin-bottom:10px;">📧</div>
+          <p style="font-size:13px;color:var(--text);margin-bottom:6px;">Check your inbox</p>
+          <p style="font-size:12px;color:var(--text-2);">
+            We've sent a confirmation link to <strong id="register-confirm-email"></strong>.
+            Click it, then come back here and log in.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ PASSWORD RESET SCREEN ═ -->
+<div id="password-reset-screen" class="auth-screen hidden">
+  <div class="auth-brand">
+    <svg class="brand-logo" viewBox="0 0 260 40" fill="none" xmlns="http://www.w3.org/2000/svg"><text x="0" y="30" font-family="'Inter', system-ui, sans-serif" font-size="26" font-weight="700" fill="#E6EDF3">Store<tspan fill="#10B981">Keeper</tspan><tspan fill="#E6EDF3">360</tspan></text></svg>
+    <p>Choose a new password for your account</p>
+  </div>
+
+  <div class="auth-card">
+    <div id="rp-loading">
+      <p style="text-align:center;color:var(--text-2);font-size:13px;">Verifying your reset link…</p>
+    </div>
+
+    <div id="rp-invalid" class="hidden">
+      <div class="auth-error">This reset link is invalid or has expired. Please request a new one from the login page.</div>
+      <button class="btn btn-primary btn-full" style="margin-top:12px;" onclick="closeResetPasswordScreen()">Back to Login</button>
+    </div>
+
+    <div id="rp-form" class="hidden">
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" id="rp-password" placeholder="Min. 6 characters" />
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input type="password" id="rp-password-confirm" placeholder="Re-enter new password" />
+      </div>
+      <div id="rp-error" class="auth-error hidden"></div>
+      <button class="btn btn-primary btn-full" onclick="submitPasswordReset()">Set New Password</button>
+    </div>
+
+    <div id="rp-success" class="hidden">
+      <div style="text-align:center;padding:12px 0;">
+        <div style="font-size:40px;margin-bottom:12px;">✓</div>
+        <p style="color:var(--accent);font-weight:600;margin-bottom:6px;">Password Reset Successful</p>
+        <p style="color:var(--text-2);font-size:13px;margin-bottom:20px;">You can now log in with your new password.</p>
+        <button class="btn btn-primary btn-full" onclick="closeResetPasswordScreen()">Go to Login</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ MAIN APP ══════════════ -->
+<div id="app" class="app hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <svg class="sidebar-logo" viewBox="0 0 260 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="30" font-family="'Inter', system-ui, sans-serif" font-size="26" font-weight="700" fill="#E6EDF3">Store<tspan fill="#10B981">Keeper</tspan><tspan fill="#E6EDF3">360</tspan></text>
+</svg>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+        <span class="nav-icon">◈</span> Dashboard
+      </button>
+      <button class="nav-item" data-page="inventory" onclick="navigate('inventory')">
+        <span class="nav-icon">⊞</span> Inventory
+      </button>
+      <button class="nav-item" data-page="sales" onclick="navigate('sales')">
+        <span class="nav-icon">⊕</span> Record Sale
+      </button>
+      <button class="nav-item" data-page="history" onclick="navigate('history')">
+        <span class="nav-icon">⊙</span> Sales History
+      </button>
+      <button class="nav-item" data-page="reports" onclick="navigate('reports')">
+        <span class="nav-icon">⊘</span> Reports
+      </button>
+      <button class="nav-item" data-page="settings" onclick="navigate('settings')">
+        <span class="nav-icon">⊛</span> Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-badge">
+        <div class="user-avatar" id="user-avatar">S</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-user-name">Loading…</div>
+          <div class="user-store" id="sidebar-store-name">Store</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()" title="Logout">⏻</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div class="page-title" id="page-title">Dashboard</div>
+      <div class="topbar-right">
+        <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Switch theme">🌙</button>
+        <div class="date-display" id="date-display"></div>
+      </div>
+    </header>
+
+    <!-- ─── DASHBOARD PAGE ──────────────────────────────────────────────────── -->
+    <section class="page active" id="page-dashboard">
+      <div id="monthly-report-banner" class="monthly-report-banner hidden">
+        <div>
+          <strong id="monthly-report-title">Monthly Report Ready</strong>
+          <p id="monthly-report-subtitle" style="font-size:12px;color:var(--text-2);margin-top:2px;"></p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="downloadMonthlyReport()">⬇ Download Report</button>
+          <button class="btn btn-ghost btn-sm" onclick="dismissMonthlyReportBanner()">Dismiss</button>
+        </div>
+      </div>
+
+      <div class="page-actions" style="margin-bottom:16px;">
+        <div></div>
+        <button class="btn btn-secondary" onclick="exportTodaysSalesToSpreadsheet()">⬇ Export Today's Sales</button>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-revenue">
+          <div class="kpi-label">Today's Revenue</div>
+          <div class="kpi-value" id="kpi-revenue">—</div>
+          <div class="kpi-sub" id="kpi-transactions">— transactions</div>
+        </div>
+        <div class="kpi-card kpi-profit">
+          <div class="kpi-label">Today's Profit</div>
+          <div class="kpi-value" id="kpi-profit">—</div>
+          <div class="kpi-sub" id="kpi-margin">— margin</div>
+        </div>
+        <div class="kpi-card kpi-stock">
+          <div class="kpi-label">Inventory Value</div>
+          <div class="kpi-value" id="kpi-stock-value">—</div>
+          <div class="kpi-sub" id="kpi-product-count">— products</div>
+        </div>
+        <div class="kpi-card kpi-month">
+          <div class="kpi-label">Month Revenue</div>
+          <div class="kpi-value" id="kpi-month-revenue">—</div>
+          <div class="kpi-sub" id="kpi-month-profit">— profit</div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>30-Day Revenue & Profit</h3>
+          </div>
+          <div class="chart-wrap"><canvas id="chart-daily"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>⚠ Low Stock Alerts</h3>
+            <button class="btn btn-sm btn-ghost" onclick="navigate('inventory')">View All</button>
+          </div>
+          <div id="low-stock-list" class="alert-list">
+            <div class="empty-state">Loading…</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Top Products</h3>
+          </div>
+          <div id="top-products-list" class="top-list">
+            <div class="empty-state">Loading…</div>
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>Monthly Performance</h3>
+          </div>
+          <div class="chart-wrap"><canvas id="chart-monthly"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── INVENTORY PAGE ──────────────────────────────────────────────────── -->
+    <section class="page" id="page-inventory">
+      <div class="page-actions">
+        <div class="search-group">
+          <input type="text" id="inv-search" placeholder="Search products…" oninput="searchProducts()" />
+          <select id="inv-cat-filter" onchange="searchProducts()">
+            <option value="">All Categories</option>
+          </select>
+          <label class="toggle-label">
+            <input type="checkbox" id="inv-low-stock" onchange="searchProducts()" />
+            Low Stock Only
+          </label>
+        </div>
+        <button class="btn btn-primary" onclick="openProductModal()">＋ Add Product</button>
+      </div>
+
+      <div class="card">
+        <table class="data-table" id="products-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Product Name</th>
+              <th>Category</th>
+              <th>Buy Price</th>
+              <th>Sell Price</th>
+              <th>Qty</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="products-tbody">
+            <tr><td colspan="8" class="empty-state">Loading products…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ─── RECORD SALE PAGE ────────────────────────────────────────────────── -->
+    <section class="page" id="page-sales">
+      <div class="sale-layout">
+        <div class="card sale-cart">
+          <div class="card-header">
+            <h3>New Sale</h3>
+            <span class="badge" id="cart-count">0 items</span>
+          </div>
+
+          <div class="sale-search">
+            <input type="text" id="sale-product-search" placeholder="Search product to add…" oninput="searchSaleProducts()" />
+            <div id="sale-product-results" class="product-dropdown hidden"></div>
+          </div>
+
+          <div id="cart-items" class="cart-items">
+            <div class="empty-state">Search and add products above</div>
+          </div>
+
+          <div class="sale-totals">
+            <div class="total-row"><span>Subtotal</span><span id="cart-subtotal">—</span></div>
+            <div class="total-row total-profit"><span>Estimated Profit</span><span id="cart-profit">—</span></div>
+          </div>
+
+          <div class="form-group">
+            <label>Sale Date</label>
+            <input type="date" id="sale-date" />
+          </div>
+          <div class="form-group">
+            <label>Note (optional)</label>
+            <input type="text" id="sale-note" placeholder="e.g. Walk-in customer, bulk order…" />
+          </div>
+
+          <div class="form-group">
+            <label>Payment Method</label>
+            <div class="payment-method-group">
+              <button type="button" class="payment-method-btn active" data-method="cash" onclick="selectPaymentMethod('cash')">💵 Cash</button>
+              <button type="button" class="payment-method-btn" data-method="transfer" onclick="selectPaymentMethod('transfer')">🏦 Transfer</button>
+              <button type="button" class="payment-method-btn" data-method="card" onclick="selectPaymentMethod('card')">💳 Card</button>
+            </div>
+          </div>
+
+          <div class="form-group hidden" id="payment-bank-group">
+            <label>Which bank account was this paid into?</label>
+            <select id="payment-bank-select"></select>
+          </div>
+
+          <div class="form-group hidden" id="payment-pos-group">
+            <label>Which POS terminal was used?</label>
+            <select id="payment-pos-select"></select>
+          </div>
+
+          <button class="btn btn-primary btn-full" onclick="submitSale()">✓ Confirm Sale</button>
+        </div>
+
+        <div class="card sale-summary-card">
+          <div class="card-header"><h3>Today's Summary</h3></div>
+          <div id="today-sale-summary">
+            <div class="summary-stat">
+              <div class="summary-label">Revenue</div>
+              <div class="summary-value" id="ts-revenue">—</div>
+            </div>
+            <div class="summary-stat">
+              <div class="summary-label">Cost</div>
+              <div class="summary-value" id="ts-cost">—</div>
+            </div>
+            <div class="summary-stat">
+              <div class="summary-label">Profit / Loss</div>
+              <div class="summary-value" id="ts-profit">—</div>
+            </div>
+            <div class="summary-stat">
+              <div class="summary-label">Transactions</div>
+              <div class="summary-value" id="ts-count">—</div>
+            </div>
+          </div>
+          <div class="pnl-bar-wrap">
+            <div class="pnl-bar" id="pnl-bar"></div>
+          </div>
+          <div class="pnl-label" id="pnl-label"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── SALES HISTORY PAGE ──────────────────────────────────────────────── -->
+    <section class="page" id="page-history">
+      <div class="page-actions">
+        <div class="search-group">
+          <input type="date" id="hist-from" />
+          <input type="date" id="hist-to" />
+          <button class="btn btn-secondary" onclick="loadHistory()">Filter</button>
+          <button class="btn btn-primary" onclick="exportHistoryToSpreadsheet()">⬇ Export Spreadsheet</button>
+        </div>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Product(s)</th>
+              <th>Category</th>
+              <th>Qty</th>
+              <th>Revenue</th>
+              <th>Cost</th>
+              <th>Profit</th>
+              <th>Payment</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <tr><td colspan="10" class="empty-state">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ─── REPORTS PAGE ────────────────────────────────────────────────────── -->
+    <section class="page" id="page-reports">
+      <div class="reports-filters">
+        <input type="date" id="rpt-from" />
+        <input type="date" id="rpt-to" />
+        <select id="rpt-year">
+          <option value="2024">2024</option>
+          <option value="2025" selected>2025</option>
+          <option value="2026">2026</option>
+        </select>
+        <button class="btn btn-primary" onclick="loadReports()">Generate Report</button>
+      </div>
+
+      <div class="reports-grid">
+        <div class="card chart-card span-2">
+          <div class="card-header"><h3>Daily Profit & Loss</h3></div>
+          <div class="chart-wrap"><canvas id="chart-pnl"></canvas></div>
+        </div>
+
+        <div class="card chart-card span-2">
+          <div class="card-header"><h3>Monthly Revenue vs Profit</h3></div>
+          <div class="chart-wrap"><canvas id="chart-monthly-rpt"></canvas></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header"><h3>Revenue by Category</h3></div>
+          <div class="chart-wrap chart-wrap-sm"><canvas id="chart-category"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Product Performance</h3></div>
+          <table class="data-table" id="product-perf-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Units</th>
+                <th>Revenue</th>
+                <th>Profit</th>
+              </tr>
+            </thead>
+            <tbody id="product-perf-tbody">
+              <tr><td colspan="4" class="empty-state">Generate a report to see data</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── SETTINGS PAGE ───────────────────────────────────────────────────── -->
+    <section class="page" id="page-settings">
+      <div class="settings-grid">
+        <div class="card">
+          <div class="card-header"><h3>Store Profile</h3></div>
+          <div class="form-group"><label>Your Name</label><input type="text" id="set-name" /></div>
+          <div class="form-group"><label>Store Name</label><input type="text" id="set-store" /></div>
+          <div class="form-group"><label>Currency Symbol</label><input type="text" id="set-currency" maxlength="3" /></div>
+          <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Categories</h3>
+            <button class="btn btn-sm btn-ghost" onclick="openAddCategoryModal()">＋ Add</button>
+          </div>
+          <div id="categories-list" class="category-list">Loading…</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>🏦 Bank Accounts</h3>
+            <button class="btn btn-sm btn-ghost" onclick="openAddBankAccountModal()">＋ Add</button>
+          </div>
+          <p style="font-size:11px;color:var(--text-2);margin-bottom:10px;">Used for the Transfer payment option when recording sales.</p>
+          <div id="bank-accounts-list" class="category-list">Loading…</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>💳 POS Terminals</h3>
+            <button class="btn btn-sm btn-ghost" onclick="openAddPosTerminalModal()">＋ Add</button>
+          </div>
+          <p style="font-size:11px;color:var(--text-2);margin-bottom:10px;">Used for the Card payment option when recording sales.</p>
+          <div id="pos-terminals-list" class="category-list">Loading…</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ MODALS ════════════════ -->
+
+<!-- Product Modal -->
+<div class="modal-overlay hidden" id="product-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="product-modal-title">Add Product</h3>
+      <button class="modal-close" onclick="closeModal('product-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pm-id" />
+      <div class="form-row">
+        <div class="form-group"><label>Product Name *</label><input type="text" id="pm-name" placeholder="e.g. Indomie Noodles" /></div>
+        <div class="form-group"><label>SKU / Code</label><input type="text" id="pm-sku" placeholder="e.g. NOO-001" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Category</label>
+          <select id="pm-category"><option value="">Select category</option></select>
+        </div>
+        <div class="form-group"><label>Unit</label>
+          <select id="pm-unit">
+            <option value="pcs">pcs</option><option value="kg">kg</option>
+            <option value="litre">litre</option><option value="box">box</option>
+            <option value="bag">bag</option><option value="carton">carton</option>
+            <option value="pair">pair</option><option value="set">set</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Purchase / Cost Price *</label><input type="number" id="pm-buy-price" placeholder="0.00" min="0" step="0.01" /></div>
+        <div class="form-group"><label>Selling Price *</label><input type="number" id="pm-sell-price" placeholder="0.00" min="0" step="0.01" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Opening Quantity</label><input type="number" id="pm-qty" placeholder="0" min="0" /></div>
+        <div class="form-group"><label>Restock Alert Level</label><input type="number" id="pm-restock" placeholder="5" min="0" /></div>
+      </div>
+      <div class="form-group"><label>Description</label><input type="text" id="pm-desc" placeholder="Optional notes about this product" /></div>
+      <div id="pm-error" class="auth-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('product-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- Restock Modal -->
+<div class="modal-overlay hidden" id="restock-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>Restock: <span id="rm-product-name"></span></h3>
+      <button class="modal-close" onclick="closeModal('restock-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="rm-product-id" />
+      <div class="form-group"><label>Quantity to Add</label><input type="number" id="rm-qty" placeholder="e.g. 50" min="1" /></div>
+      <div class="form-group"><label>Note</label><input type="text" id="rm-note" placeholder="e.g. Received from supplier" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('restock-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitRestock()">Add Stock</button>
+    </div>
+  </div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal-overlay hidden" id="category-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>New Category</h3>
+      <button class="modal-close" onclick="closeModal('category-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Category Name</label><input type="text" id="cat-name" placeholder="e.g. Stationery" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('category-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitCategory()">Add Category</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bank Account Modal -->
+<div class="modal-overlay hidden" id="bank-account-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>Add Bank Account</h3>
+      <button class="modal-close" onclick="closeModal('bank-account-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Bank Name</label><input type="text" id="ba-bank-name" placeholder="e.g. GTBank" /></div>
+      <div class="form-group"><label>Account Number</label><input type="text" id="ba-account-number" placeholder="e.g. 0123456789" /></div>
+      <div class="form-group"><label>Account Name</label><input type="text" id="ba-account-name" placeholder="e.g. StoreKeeper Enterprises" /></div>
+      <div id="ba-error" class="auth-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('bank-account-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitBankAccount()">Add Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- POS Terminal Modal -->
+<div class="modal-overlay hidden" id="pos-terminal-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>Add POS Terminal</h3>
+      <button class="modal-close" onclick="closeModal('pos-terminal-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Terminal Name</label><input type="text" id="pt-name" placeholder="e.g. Front Counter Terminal" /></div>
+      <div class="form-group"><label>Provider (optional)</label><input type="text" id="pt-provider" placeholder="e.g. Moniepoint, Opay, Paystack" /></div>
+      <div class="form-group"><label>Terminal ID / Serial (optional)</label><input type="text" id="pt-terminal-id" placeholder="e.g. TID-00291" /></div>
+      <div id="pt-error" class="auth-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('pos-terminal-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitPosTerminal()">Add Terminal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal-overlay hidden" id="receipt-modal">
+  <div class="modal modal-receipt">
+    <div class="modal-header no-print">
+      <h3>Sale Recorded ✓</h3>
+      <button class="modal-close" onclick="closeModal('receipt-modal')">✕</button>
+    </div>
+    <div class="modal-body no-print">
+      <div class="receipt-tabs">
+        <button class="receipt-tab active" id="tab-merchant" onclick="switchReceiptTab('merchant')">Merchant Receipt</button>
+        <button class="receipt-tab" id="tab-customer" onclick="switchReceiptTab('customer')">Customer Receipt</button>
+      </div>
+    </div>
+
+    <div class="receipt-print-area" id="receipt-print-area">
+      <div id="receipt-merchant-view" class="receipt-paper"></div>
+      <div id="receipt-customer-view" class="receipt-paper hidden"></div>
+    </div>
+
+    <div class="modal-footer no-print">
+      <button class="btn btn-ghost" onclick="closeModal('receipt-modal')">Close</button>
+      <button class="btn btn-primary" onclick="printReceipt()">🖨 Print / Save as PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="modal-overlay hidden" id="forgot-password-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>Reset Your Password</h3>
+      <button class="modal-close" onclick="closeModal('forgot-password-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="fp-request-view">
+        <p style="font-size:12px;color:var(--text-2);margin-bottom:16px;">
+          Enter the email address linked to your account. We'll send you a link to reset your password.
+        </p>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="fp-email" placeholder="you@store.com" />
+        </div>
+        <div id="fp-error" class="auth-error hidden"></div>
+      </div>
+      <div id="fp-sent-view" class="hidden">
+        <div style="text-align:center;padding:8px 0;">
+          <div style="font-size:32px;margin-bottom:10px;">📧</div>
+          <p style="font-size:13px;color:var(--text);margin-bottom:6px;">Check your inbox</p>
+          <p style="font-size:12px;color:var(--text-2);" id="fp-sent-message">
+            If an account exists with that email, a reset link is on its way.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('forgot-password-modal')">Close</button>
+      <button class="btn btn-primary" id="fp-submit-btn" onclick="submitForgotPassword()">Send Reset Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<script>
+// ── Supabase project credentials (safe to expose — this is the public anon key) ──
+const SUPABASE_URL = "https://jgpnmdsspzrgxrnpofwc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpncG5tZHNzcHpyZ3hybnBvZndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4MzkxODIsImV4cCI6MjA5OTQxNTE4Mn0.Q-OF6rRVtPhho0WnzDoloC8c5PC-fIA7rwYAyyrFNws";
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   StoreKeeper360 — app.js
+   Full SPA logic: auth, routing, dashboard, inventory, sales, reports, settings
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+"use strict";
+
+// ── THEME ─────────────────────────────────────────────────────────────────────
+function applyThemeIcon() {
+  const theme = document.documentElement.getAttribute("data-theme") || "dark";
+  const btn = document.getElementById("theme-toggle-btn");
+  if (btn) btn.textContent = theme === "light" ? "☀️" : "🌙";
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "dark";
+  const next = current === "light" ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("sk_theme", next);
+  applyThemeIcon();
+  if (typeof applyChartTheme === "function") applyChartTheme();
+
+  // Chart.js reads colors at creation time, so existing charts keep their old
+  // theme colors until redrawn. Re-render whichever page is currently active.
+  const activePage = document.querySelector(".page.active")?.id?.replace("page-", "");
+  if (activePage === "dashboard") loadDashboard();
+  if (activePage === "reports") loadReports();
+}
+
+document.addEventListener("DOMContentLoaded", applyThemeIcon);
+
+// ── SUPABASE CLIENT ────────────────────────────────────────────────────────────
+// SUPABASE_URL and SUPABASE_ANON_KEY are declared above, inline in this file
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+const State = {
+  session: null,   // Supabase session object (contains access_token, user, etc.)
+  profile: null,   // Row from public.profiles: { name, store_name, currency, email }
+  cart:  [],
+  chartInstances: {},
+  categories: [],
+  products: [],
+  bankAccounts: [],
+  posTerminals: [],
+  historySales: [],
+  pendingMonthlyReport: null,
+};
+
+// Convenience getter used throughout the rest of the app (dashboard, inventory, etc.)
+// so existing code referencing "State.user" keeps working with minimal changes.
+Object.defineProperty(State, "user", {
+  get() { return this.profile; },
+});
+
+// ── API HELPER ────────────────────────────────────────────────────────────────
+// Calls our own backend (/api/products, /api/sales, /api/reports, /api/auth/profile).
+// Supabase Auth itself is called directly via the `supabase` client, not through here.
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { "Content-Type": "application/json" },
+  };
+  const token = State.session?.access_token;
+  if (token) opts.headers["Authorization"] = `Bearer ${token}`;
+  if (body) opts.body = JSON.stringify(body);
+
+  const res = await fetch(`/api${path}`, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Request failed");
+  return data;
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let _toastTimer;
+function showToast(msg, type = "success") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `toast show ${type === "error" ? "error" : type === "warn" ? "warn" : ""}`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => (el.className = "toast hidden"), 3500);
+}
+
+// ── FORMAT HELPERS ────────────────────────────────────────────────────────────
+function cur(val) {
+  const sym = State.profile?.currency || "₦";
+  const n = parseFloat(val) || 0;
+  return `${sym}${n.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function profitClass(v) {
+  const n = parseFloat(v);
+  return n > 0 ? "profit" : n < 0 ? "loss" : "neutral";
+}
+
+function fmtDate(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function todayISO() {
+  return new Date().toISOString().split("T")[0];
+}
+
+// ── CHART HELPER ──────────────────────────────────────────────────────────────
+function buildChart(id, config) {
+  if (State.chartInstances[id]) {
+    State.chartInstances[id].destroy();
+    delete State.chartInstances[id];
+  }
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  State.chartInstances[id] = new Chart(canvas.getContext("2d"), config);
+}
+
+function applyChartTheme() {
+  const styles = getComputedStyle(document.documentElement);
+  Chart.defaults.color = styles.getPropertyValue("--text-2").trim() || "#8B949E";
+  Chart.defaults.borderColor = styles.getPropertyValue("--border").trim() || "#30363D";
+  Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+  Chart.defaults.font.size = 12;
+}
+applyChartTheme();
+
+// ════════════════════════════════════════════════ AUTH ═══════════════════════
+
+function switchAuthTab(tab) {
+  document.querySelectorAll(".auth-tab").forEach((t, i) => {
+    t.classList.toggle("active", (i === 0 && tab === "login") || (i === 1 && tab === "register"));
+  });
+  document.getElementById("login-form").classList.toggle("hidden", tab !== "login");
+  document.getElementById("register-form").classList.toggle("hidden", tab !== "register");
+
+  // Reset register form back to its input view (in case it was showing the
+  // "check your email" confirmation view from a previous signup attempt)
+  document.getElementById("register-request-view")?.classList.remove("hidden");
+  document.getElementById("register-confirm-view")?.classList.add("hidden");
+
+  // Clear any lingering error messages when switching tabs
+  document.getElementById("login-error").classList.add("hidden");
+  document.getElementById("reg-error").classList.add("hidden");
+}
+
+async function handleLogin() {
+  const email    = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value;
+  const errEl    = document.getElementById("login-error");
+  errEl.classList.add("hidden");
+
+  if (!email || !password) {
+    errEl.textContent = "Please enter both email and password.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.classList.remove("hidden");
+    return;
+  }
+
+  State.session = data.session;
+  await loadProfileAndBoot();
+}
+
+async function handleRegister() {
+  const name            = document.getElementById("reg-name").value.trim();
+  const store_name      = document.getElementById("reg-store").value.trim();
+  const email           = document.getElementById("reg-email").value.trim();
+  const password        = document.getElementById("reg-password").value;
+  const passwordConfirm = document.getElementById("reg-password-confirm").value;
+  const currency        = document.getElementById("reg-currency").value.trim() || "₦";
+  const errEl           = document.getElementById("reg-error");
+  errEl.classList.add("hidden");
+
+  if (!name || !email || !password || !passwordConfirm) {
+    errEl.textContent = "Please fill in all required fields.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+  if (password.length < 6) {
+    errEl.textContent = "Password must be at least 6 characters long.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+  if (password !== passwordConfirm) {
+    errEl.textContent = "Passwords do not match. Please re-enter.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(email)) {
+    errEl.textContent = "Please enter a valid email address.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name, store_name: store_name || "My Store", currency },
+    },
+  });
+
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.classList.remove("hidden");
+    return;
+  }
+
+  if (data.session) {
+    // Email confirmation is disabled in this Supabase project — log straight in
+    State.session = data.session;
+    await loadProfileAndBoot();
+  } else {
+    // Default Supabase behavior: confirmation email sent, no session yet
+    document.getElementById("register-confirm-email").textContent = email;
+    document.getElementById("register-request-view").classList.add("hidden");
+    document.getElementById("register-confirm-view").classList.remove("hidden");
+  }
+}
+
+// ════════════════════════════════════════════════ FORGOT PASSWORD ════════════
+
+function openForgotPasswordModal() {
+  document.getElementById("fp-email").value = "";
+  document.getElementById("fp-error").classList.add("hidden");
+  document.getElementById("fp-request-view").classList.remove("hidden");
+  document.getElementById("fp-sent-view").classList.add("hidden");
+  document.getElementById("fp-submit-btn").classList.remove("hidden");
+  document.getElementById("forgot-password-modal").classList.remove("hidden");
+}
+
+async function submitForgotPassword() {
+  const email = document.getElementById("fp-email").value.trim();
+  const errEl = document.getElementById("fp-error");
+  errEl.classList.add("hidden");
+
+  if (!email) {
+    errEl.textContent = "Please enter your email address.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password.html`,
+  });
+
+  // Supabase returns success even for unregistered emails (prevents leaking
+  // which addresses have accounts) — show the same message either way.
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.classList.remove("hidden");
+    return;
+  }
+
+  document.getElementById("fp-request-view").classList.add("hidden");
+  document.getElementById("fp-sent-view").classList.remove("hidden");
+  document.getElementById("fp-submit-btn").classList.add("hidden");
+}
+
+// ════════════════════════════════════════════════ LOGOUT ═════════════════════
+
+async function logout() {
+  if (!confirm("Are you sure you want to log out?")) return;
+
+  await supabase.auth.signOut();
+  State.session = null;
+  State.profile = null;
+  State.cart    = [];
+
+  // Reset auth screen back to login tab for the next person
+  switchAuthTab("login");
+  document.getElementById("login-email").value = "";
+  document.getElementById("login-password").value = "";
+  document.getElementById("login-error").classList.add("hidden");
+
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("auth-screen").classList.remove("hidden");
+}
+
+// ════════════════════════════════════════════════ APP BOOT ═══════════════════
+
+async function loadProfileAndBoot() {
+  try {
+    State.profile = await api("GET", "/auth/profile");
+    bootApp();
+  } catch (e) {
+    showToast("Could not load your profile: " + e.message, "error");
+  }
+}
+
+function bootApp() {
+  if (!State.session || !State.profile) return;
+  document.getElementById("auth-screen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+
+  // Populate user info
+  document.getElementById("sidebar-user-name").textContent = State.profile.name || State.profile.email;
+  document.getElementById("sidebar-store-name").textContent = State.profile.store_name;
+  document.getElementById("user-avatar").textContent = (State.profile.name || State.profile.email)?.[0]?.toUpperCase() || "U";
+
+  // Date display
+  document.getElementById("date-display").textContent = new Date().toLocaleDateString("en-NG", {
+    weekday: "short", day: "numeric", month: "short", year: "numeric",
+  });
+
+  // Set today's date in sale form
+  document.getElementById("sale-date").value = todayISO();
+
+  // Load categories globally then navigate
+  Promise.all([loadCategories(), loadBankAccountsAndTerminals()]).then(() => {
+    navigate("dashboard");
+    checkMonthlyReportBanner();
+  });
+}
+
+// ════════════════════════════════════════════════ ROUTING ════════════════════
+
+function navigate(page) {
+  document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
+  document.getElementById(`page-${page}`)?.classList.add("active");
+  document.querySelector(`[data-page="${page}"]`)?.classList.add("active");
+
+  const titles = {
+    dashboard: "Dashboard",
+    inventory: "Inventory",
+    sales:     "Record Sale",
+    history:   "Sales History",
+    reports:   "Reports",
+    settings:  "Settings",
+  };
+  document.getElementById("page-title").textContent = titles[page] || page;
+
+  // Close sidebar on mobile
+  document.getElementById("sidebar").classList.remove("open");
+
+  // Load page data
+  if (page === "dashboard") loadDashboard();
+  if (page === "inventory") loadProducts();
+  if (page === "sales")     { loadSalePageSummary(); State.cart = []; renderCart(); resetPaymentMethodUI(); }
+  if (page === "history")   loadHistory();
+  if (page === "reports")   loadReports();
+  if (page === "settings")  loadSettings();
+}
+
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+}
+
+// ════════════════════════════════════════════════ DASHBOARD ══════════════════
+
+async function loadDashboard() {
+  try {
+    const [dash, daily, monthly] = await Promise.all([
+      api("GET", "/reports/dashboard"),
+      api("GET", "/reports/daily"),
+      api("GET", "/reports/monthly"),
+    ]);
+
+    // ── KPIs
+    const { todaySales, monthSales, inventoryValue, lowStock, topProducts } = dash;
+    document.getElementById("kpi-revenue").textContent   = cur(todaySales.revenue);
+    document.getElementById("kpi-transactions").textContent = `${todaySales.transactions} transaction${todaySales.transactions !== 1 ? "s" : ""}`;
+
+    const p = parseFloat(todaySales.profit);
+    const kpiProfit = document.getElementById("kpi-profit");
+    kpiProfit.textContent = cur(p);
+    kpiProfit.className = `kpi-value ${profitClass(p)}`;
+
+    const margin = todaySales.revenue > 0 ? ((p / todaySales.revenue) * 100).toFixed(1) : "0";
+    document.getElementById("kpi-margin").textContent = `${margin}% margin`;
+
+    document.getElementById("kpi-stock-value").textContent  = cur(inventoryValue.retail_value);
+    document.getElementById("kpi-product-count").textContent = `${inventoryValue.product_count} products · ${inventoryValue.total_units} units`;
+
+    document.getElementById("kpi-month-revenue").textContent = cur(monthSales.revenue);
+    const mp = parseFloat(monthSales.profit);
+    document.getElementById("kpi-month-profit").textContent = `${cur(mp)} profit`;
+
+    // ── Low Stock
+    const lsEl = document.getElementById("low-stock-list");
+    if (lowStock.length === 0) {
+      lsEl.innerHTML = '<div class="empty-state">All products are well-stocked ✓</div>';
+    } else {
+      lsEl.innerHTML = lowStock.map((item) => `
+        <div class="alert-item ${item.quantity === 0 ? "critical" : ""}">
+          <div>
+            <div class="alert-product">${item.name}</div>
+            <div style="font-size:11px;color:var(--text-2)">${item.quantity === 0 ? "Out of stock" : `Restock at ${item.restock_level}`}</div>
+          </div>
+          <span class="alert-qty">${item.quantity} ${item.unit}</span>
+        </div>
+      `).join("");
+    }
+
+    // ── Top Products
+    const tpEl = document.getElementById("top-products-list");
+    if (topProducts.length === 0) {
+      tpEl.innerHTML = '<div class="empty-state">No sales recorded yet</div>';
+    } else {
+      tpEl.innerHTML = topProducts.map((p, i) => `
+        <div class="top-item">
+          <span class="top-rank">#${i + 1}</span>
+          <div class="top-name">${p.name}</div>
+          <span class="top-val">${p.units_sold} sold</span>
+        </div>
+      `).join("");
+    }
+
+    // ── Daily Chart
+    buildChart("chart-daily", {
+      type: "line",
+      data: {
+        labels: daily.map((d) => d.sale_date.slice(5)),
+        datasets: [
+          {
+            label: "Revenue",
+            data: daily.map((d) => d.revenue),
+            borderColor: "#10B981",
+            backgroundColor: "rgba(16,185,129,0.08)",
+            fill: true,
+            tension: 0.4,
+            pointRadius: 2,
+          },
+          {
+            label: "Profit",
+            data: daily.map((d) => d.profit),
+            borderColor: "#3B82F6",
+            backgroundColor: "rgba(59,130,246,0.06)",
+            fill: true,
+            tension: 0.4,
+            pointRadius: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { labels: { boxWidth: 10, font: { size: 11 } } } },
+        scales: {
+          y: { ticks: { callback: (v) => `${State.user?.currency || "₦"}${v.toLocaleString()}` } },
+        },
+      },
+    });
+
+    // ── Monthly Chart (dashboard)
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    buildChart("chart-monthly", {
+      type: "bar",
+      data: {
+        labels: monthly.map((m) => monthNames[parseInt(m.month) - 1]),
+        datasets: [
+          { label: "Revenue", data: monthly.map((m) => m.revenue), backgroundColor: "rgba(16,185,129,0.6)", borderRadius: 4 },
+          { label: "Profit",  data: monthly.map((m) => m.profit),  backgroundColor: "rgba(59,130,246,0.6)",  borderRadius: 4 },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { boxWidth: 10, font: { size: 11 } } } },
+        scales: { y: { ticks: { callback: (v) => `${State.user?.currency || "₦"}${v.toLocaleString()}` } } },
+      },
+    });
+
+  } catch (e) {
+    showToast("Failed to load dashboard: " + e.message, "error");
+  }
+}
+
+// ════════════════════════════════════════════════ INVENTORY ══════════════════
+
+async function loadCategories() {
+  try {
+    State.categories = await api("GET", "/products/meta/categories");
+    // Populate all category selects
+    const catOpts = `<option value="">All Categories</option>` +
+      State.categories.map((c) => `<option value="${c.id}">${c.name}</option>`).join("");
+    document.getElementById("inv-cat-filter").innerHTML = catOpts;
+
+    const pmCat = document.getElementById("pm-category");
+    pmCat.innerHTML = `<option value="">Select category</option>` +
+      State.categories.map((c) => `<option value="${c.id}">${c.name}</option>`).join("");
+  } catch {}
+}
+
+async function loadProducts() {
+  const search   = document.getElementById("inv-search").value;
+  const category = document.getElementById("inv-cat-filter").value;
+  const lowStock = document.getElementById("inv-low-stock").checked ? "1" : "";
+
+  let qs = `?search=${encodeURIComponent(search)}&category=${category}&low_stock=${lowStock}`;
+  try {
+    const products = await api("GET", `/products${qs}`);
+    State.products = products;
+    const tbody = document.getElementById("products-tbody");
+
+    if (products.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="empty-state">No products found. Add your first product →</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = products.map((p) => {
+      const margin = p.selling_price > 0 ? (((p.selling_price - p.purchase_price) / p.selling_price) * 100).toFixed(0) : 0;
+      const status = p.quantity === 0 ? `<span class="badge badge-danger">Out of Stock</span>`
+                   : p.quantity <= p.restock_level ? `<span class="badge badge-warn">Low Stock</span>`
+                   : `<span class="badge badge-ok">In Stock</span>`;
+      return `
+        <tr>
+          <td><code style="font-size:11px;color:var(--text-2)">${p.sku || "—"}</code></td>
+          <td><strong>${p.name}</strong>${p.description ? `<br><span style="font-size:11px;color:var(--text-2)">${p.description}</span>` : ""}</td>
+          <td>${p.category_name || "—"}</td>
+          <td class="num">${cur(p.purchase_price)}</td>
+          <td class="num">${cur(p.selling_price)}<br><span style="font-size:10px;color:var(--text-2)">${margin}% margin</span></td>
+          <td class="num"><strong>${p.quantity}</strong> ${p.unit}</td>
+          <td>${status}</td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-sm btn-ghost btn-icon" onclick="openProductModal(${p.id})" title="Edit">✏</button>
+              <button class="btn btn-sm btn-ghost btn-icon" onclick="openRestockModal(${p.id},'${p.name.replace(/'/g,"\\'")}',${p.quantity})" title="Restock">+</button>
+              <button class="btn btn-sm btn-danger btn-icon" onclick="deleteProduct(${p.id},'${p.name.replace(/'/g,"\\'")}' )" title="Delete">✕</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  } catch (e) {
+    showToast("Error loading products: " + e.message, "error");
+  }
+}
+
+function searchProducts() { loadProducts(); }
+
+// ── Product Modal ─────────────────────────────────────────────────────────────
+async function openProductModal(id) {
+  await loadCategories();
+  document.getElementById("pm-id").value       = id || "";
+  document.getElementById("pm-name").value     = "";
+  document.getElementById("pm-sku").value      = "";
+  document.getElementById("pm-buy-price").value = "";
+  document.getElementById("pm-sell-price").value = "";
+  document.getElementById("pm-qty").value      = "";
+  document.getElementById("pm-restock").value  = "5";
+  document.getElementById("pm-desc").value     = "";
+  document.getElementById("pm-category").value = "";
+  document.getElementById("pm-unit").value     = "pcs";
+  document.getElementById("pm-error").classList.add("hidden");
+
+  if (id) {
+    document.getElementById("product-modal-title").textContent = "Edit Product";
+    document.getElementById("pm-qty").disabled = true;
+    try {
+      const p = await api("GET", `/products/${id}`);
+      document.getElementById("pm-name").value      = p.name;
+      document.getElementById("pm-sku").value       = p.sku || "";
+      document.getElementById("pm-buy-price").value  = p.purchase_price;
+      document.getElementById("pm-sell-price").value = p.selling_price;
+      document.getElementById("pm-restock").value   = p.restock_level;
+      document.getElementById("pm-desc").value      = p.description || "";
+      document.getElementById("pm-category").value  = p.category_id || "";
+      document.getElementById("pm-unit").value      = p.unit;
+    } catch {}
+  } else {
+    document.getElementById("product-modal-title").textContent = "Add Product";
+    document.getElementById("pm-qty").disabled = false;
+  }
+
+  document.getElementById("product-modal").classList.remove("hidden");
+}
+
+async function saveProduct() {
+  const id = document.getElementById("pm-id").value;
+  const errEl = document.getElementById("pm-error");
+  errEl.classList.add("hidden");
+
+  const payload = {
+    name:           document.getElementById("pm-name").value.trim(),
+    sku:            document.getElementById("pm-sku").value.trim(),
+    category_id:    document.getElementById("pm-category").value || null,
+    purchase_price: parseFloat(document.getElementById("pm-buy-price").value) || 0,
+    selling_price:  parseFloat(document.getElementById("pm-sell-price").value) || 0,
+    quantity:       parseInt(document.getElementById("pm-qty").value) || 0,
+    restock_level:  parseInt(document.getElementById("pm-restock").value) || 5,
+    unit:           document.getElementById("pm-unit").value,
+    description:    document.getElementById("pm-desc").value.trim(),
+  };
+
+  if (!payload.name) {
+    errEl.textContent = "Product name is required.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+
+  try {
+    if (id) {
+      await api("PUT", `/products/${id}`, payload);
+      showToast("Product updated successfully");
+    } else {
+      await api("POST", "/products", payload);
+      showToast("Product added successfully");
+    }
+    closeModal("product-modal");
+    loadProducts();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove("hidden");
+  }
+}
+
+function openRestockModal(id, name, currentQty) {
+  document.getElementById("rm-product-id").value   = id;
+  document.getElementById("rm-product-name").textContent = name;
+  document.getElementById("rm-qty").value  = "";
+  document.getElementById("rm-note").value = "";
+  document.getElementById("restock-modal").classList.remove("hidden");
+}
+
+async function submitRestock() {
+  const id  = document.getElementById("rm-product-id").value;
+  const qty = parseInt(document.getElementById("rm-qty").value);
+  const note = document.getElementById("rm-note").value;
+  if (!qty || qty <= 0) { showToast("Enter a valid quantity", "error"); return; }
+  try {
+    await api("POST", `/products/${id}/restock`, { quantity: qty, note });
+    showToast(`Stock updated (+${qty})`);
+    closeModal("restock-modal");
+    loadProducts();
+  } catch (e) {
+    showToast(e.message, "error");
+  }
+}
+
+async function deleteProduct(id, name) {
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  try {
+    await api("DELETE", `/products/${id}`);
+    showToast("Product deleted");
+    loadProducts();
+  } catch (e) {
+    showToast(e.message, "error");
+  }
+}
+
+// ════════════════════════════════════════════════ SALE PAGE ══════════════════
+
+let _saleSearchTimer;
+function searchSaleProducts() {
+  clearTimeout(_saleSearchTimer);
+  _saleSearchTimer = setTimeout(async () => {
+    const q = document.getElementById("sale-product-search").value.trim();
+    const dd = document.getElementById("sale-product-results");
+    if (!q) { dd.classList.add("hidden"); return; }
+    try {
+      const products = await api("GET", `/products?search=${encodeURIComponent(q)}`);
+      if (products.length === 0) {
+        dd.innerHTML = '<div class="product-option" style="color:var(--text-2)">No products found</div>';
+      } else {
+        const shown = products.slice(0, 20);
+        dd.innerHTML = shown.map((p) => `
+          <div class="product-option" onclick="addToCart(${p.id})">
+            <div>
+              <div class="po-name">${p.name}</div>
+              <div class="po-stock">${p.quantity} ${p.unit} in stock</div>
+            </div>
+            <div class="po-price">${cur(p.selling_price)}</div>
+          </div>
+        `).join("") + (products.length > 20 ? `<div class="product-option" style="color:var(--text-2);font-size:11px;">+${products.length - 20} more — refine your search</div>` : "");
+      }
+      dd.classList.remove("hidden");
+    } catch {}
+  }, 250);
+}
+
+function addToCart(productId) {
+  const product = State.products.find((p) => p.id === productId);
+  // If not in cached products, fetch from server
+  if (!product) {
+    api("GET", `/products/${productId}`).then((p) => _addProductToCart(p));
+  } else {
+    _addProductToCart(product);
+  }
+  document.getElementById("sale-product-search").value = "";
+  document.getElementById("sale-product-results").classList.add("hidden");
+}
+
+function _addProductToCart(product) {
+  const existing = State.cart.find((c) => c.id === product.id);
+  if (existing) {
+    existing.qty = Math.min(existing.qty + 1, product.quantity);
+  } else {
+    State.cart.push({ id: product.id, name: product.name, unit: product.unit,
+      price: product.selling_price, cost: product.purchase_price,
+      stock: product.quantity, qty: 1 });
+  }
+  renderCart();
+}
+
+function renderCart() {
+  const el  = document.getElementById("cart-items");
+  const cnt = document.getElementById("cart-count");
+
+  if (State.cart.length === 0) {
+    el.innerHTML = '<div class="empty-state">Search and add products above</div>';
+    cnt.textContent = "0 items";
+    document.getElementById("cart-subtotal").textContent = "—";
+    document.getElementById("cart-profit").textContent   = "—";
+    return;
+  }
+
+  cnt.textContent = `${State.cart.length} item${State.cart.length > 1 ? "s" : ""}`;
+
+  el.innerHTML = State.cart.map((item, i) => `
+    <div class="cart-item">
+      <div>
+        <div class="ci-name">${item.name}</div>
+        <div class="ci-stock">${item.stock} ${item.unit} available</div>
+      </div>
+      <input type="number" value="${item.qty}" min="1" max="${item.stock}"
+        onchange="updateCartQty(${i}, this.value)" style="width:70px" />
+      <span class="ci-price">${cur(item.price * item.qty)}</span>
+      <button class="ci-remove" onclick="removeFromCart(${i})">✕</button>
+    </div>
+  `).join("");
+
+  const subtotal = State.cart.reduce((s, c) => s + c.price * c.qty, 0);
+  const profit   = State.cart.reduce((s, c) => s + (c.price - c.cost) * c.qty, 0);
+
+  document.getElementById("cart-subtotal").textContent = cur(subtotal);
+  const profitEl = document.getElementById("cart-profit");
+  profitEl.textContent = cur(profit);
+  profitEl.className = profitClass(profit);
+}
+
+function updateCartQty(index, val) {
+  const qty = parseInt(val);
+  if (isNaN(qty) || qty < 1) return;
+  const item = State.cart[index];
+  if (qty > item.stock) {
+    showToast(`Only ${item.stock} ${item.unit} in stock`, "warn");
+    State.cart[index].qty = item.stock;
+  } else {
+    State.cart[index].qty = qty;
+  }
+  renderCart();
+}
+
+function removeFromCart(index) {
+  State.cart.splice(index, 1);
+  renderCart();
+}
+
+// ════════════════════════════════════════════════ PAYMENT METHOD ═════════════
+
+let selectedPaymentMethod = "cash";
+
+function resetPaymentMethodUI() {
+  selectedPaymentMethod = "cash";
+  document.querySelectorAll(".payment-method-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.method === "cash");
+  });
+  document.getElementById("payment-bank-group").classList.add("hidden");
+  document.getElementById("payment-pos-group").classList.add("hidden");
+  populatePaymentDropdowns();
+}
+
+function populatePaymentDropdowns() {
+  const bankSelect = document.getElementById("payment-bank-select");
+  const posSelect  = document.getElementById("payment-pos-select");
+
+  if (bankSelect) {
+    bankSelect.innerHTML = (State.bankAccounts || []).length === 0
+      ? `<option value="">No bank accounts added — add one in Settings</option>`
+      : State.bankAccounts.map((b) => `<option value="${b.id}">${b.bank_name} — ${b.account_number} (${b.account_name})</option>`).join("");
+  }
+  if (posSelect) {
+    posSelect.innerHTML = (State.posTerminals || []).length === 0
+      ? `<option value="">No POS terminals added — add one in Settings</option>`
+      : State.posTerminals.map((p) => `<option value="${p.id}">${p.terminal_name}${p.provider ? " — " + p.provider : ""}</option>`).join("");
+  }
+}
+
+function selectPaymentMethod(method) {
+  selectedPaymentMethod = method;
+  document.querySelectorAll(".payment-method-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.method === method);
+  });
+  document.getElementById("payment-bank-group").classList.toggle("hidden", method !== "transfer");
+  document.getElementById("payment-pos-group").classList.toggle("hidden", method !== "card");
+}
+
+async function submitSale() {
+  if (State.cart.length === 0) { showToast("Add items to the cart first", "warn"); return; }
+
+  const bank_account_id = document.getElementById("payment-bank-select")?.value || null;
+  const pos_terminal_id  = document.getElementById("payment-pos-select")?.value || null;
+
+  if (selectedPaymentMethod === "transfer" && !bank_account_id) {
+    showToast("Select which bank account the transfer was paid into", "warn");
+    return;
+  }
+  if (selectedPaymentMethod === "card" && !pos_terminal_id) {
+    showToast("Select which POS terminal was used", "warn");
+    return;
+  }
+
+  const items = State.cart.map((c) => ({
+    product_id: c.id, quantity_sold: c.qty, unit_price: c.price,
+  }));
+  const note      = document.getElementById("sale-note").value;
+  const sale_date = document.getElementById("sale-date").value;
+
+  try {
+    const result = await api("POST", "/sales/bulk", {
+      items, note, sale_date,
+      payment_method: selectedPaymentMethod,
+      bank_account_id: selectedPaymentMethod === "transfer" ? bank_account_id : null,
+      pos_terminal_id: selectedPaymentMethod === "card" ? pos_terminal_id : null,
+    });
+    showToast(`Sale recorded — ${items.length} item${items.length > 1 ? "s" : ""}!`);
+
+    showReceiptModal({
+      items: result.sales,
+      payment_method: result.payment_method,
+      bank_account: result.bank_account,
+      pos_terminal: result.pos_terminal,
+      sale_date: result.sale_date,
+      note,
+    });
+
+    State.cart = [];
+    renderCart();
+    document.getElementById("sale-note").value = "";
+    resetPaymentMethodUI();
+    loadSalePageSummary();
+  } catch (e) {
+    showToast(e.message, "error");
+  }
+}
+
+// ════════════════════════════════════════════════ RECEIPTS ═══════════════════
+
+let _lastReceiptData = null;
+
+function paymentMethodLabel(method) {
+  return { cash: "Cash", transfer: "Bank Transfer", card: "Card (POS)" }[method] || method;
+}
+
+function showReceiptModal(saleData) {
+  _lastReceiptData = saleData;
+  renderMerchantReceipt(saleData);
+  renderCustomerReceipt(saleData);
+  switchReceiptTab("merchant");
+  document.getElementById("receipt-modal").classList.remove("hidden");
+}
+
+function switchReceiptTab(tab) {
+  document.getElementById("tab-merchant").classList.toggle("active", tab === "merchant");
+  document.getElementById("tab-customer").classList.toggle("active", tab === "customer");
+  document.getElementById("receipt-merchant-view").classList.toggle("hidden", tab !== "merchant");
+  document.getElementById("receipt-customer-view").classList.toggle("hidden", tab !== "customer");
+}
+
+function renderMerchantReceipt(saleData) {
+  const storeName = State.profile?.store_name || "My Store";
+  const { items, payment_method, bank_account, pos_terminal, sale_date, note } = saleData;
+
+  const subtotal = items.reduce((s, i) => s + Number(i.total_revenue), 0);
+  const totalProfit = items.reduce((s, i) => s + Number(i.profit), 0);
+  const now = new Date();
+
+  let paymentDetail = "";
+  if (payment_method === "transfer" && bank_account) {
+    paymentDetail = `
+      <div class="receipt-row muted"><span>Bank</span><span>${bank_account.bank_name}</span></div>
+      <div class="receipt-row muted"><span>Account No.</span><span>${bank_account.account_number}</span></div>
+      <div class="receipt-row muted"><span>Account Name</span><span>${bank_account.account_name}</span></div>
+    `;
+  } else if (payment_method === "card" && pos_terminal) {
+    paymentDetail = `
+      <div class="receipt-row muted"><span>Terminal</span><span>${pos_terminal.terminal_name}</span></div>
+      ${pos_terminal.provider ? `<div class="receipt-row muted"><span>Provider</span><span>${pos_terminal.provider}</span></div>` : ""}
+    `;
+  }
+
+  document.getElementById("receipt-merchant-view").innerHTML = `
+    <div class="receipt-store-name">${storeName}</div>
+    <div class="receipt-subtitle">Merchant Copy</div>
+    <div class="receipt-row muted"><span>Date</span><span>${fmtDate(sale_date)} ${now.toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })}</span></div>
+    <div class="receipt-row muted"><span>Items</span><span>${items.length}</span></div>
+    <hr class="receipt-divider" />
+    ${items.map((i) => `
+      <div class="receipt-item-row">
+        <span class="receipt-item-name">${i.product_name} × ${i.quantity_sold}</span>
+        <span>${cur(i.total_revenue)}</span>
+      </div>
+    `).join("")}
+    <hr class="receipt-divider" />
+    <div class="receipt-total-row"><span>Total Revenue</span><span>${cur(subtotal)}</span></div>
+    <div class="receipt-row muted"><span>Total Profit</span><span class="${profitClass(totalProfit)}">${cur(totalProfit)}</span></div>
+    <hr class="receipt-divider" />
+    <div class="receipt-row muted"><span>Payment Method</span><span>${paymentMethodLabel(payment_method)}</span></div>
+    ${paymentDetail}
+    ${note ? `<div class="receipt-row muted"><span>Note</span><span>${note}</span></div>` : ""}
+  `;
+}
+
+function renderCustomerReceipt(saleData) {
+  const storeName = State.profile?.store_name || "My Store";
+  const { items, sale_date } = saleData;
+  const total = items.reduce((s, i) => s + Number(i.total_revenue), 0);
+  const now = new Date();
+
+  document.getElementById("receipt-customer-view").innerHTML = `
+    <div class="receipt-store-name">${storeName}</div>
+    <div class="receipt-subtitle">Customer Receipt</div>
+    <div class="receipt-row muted"><span>Date</span><span>${fmtDate(sale_date)} ${now.toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })}</span></div>
+    <hr class="receipt-divider" />
+    ${items.map((i) => `
+      <div class="receipt-item-row">
+        <span class="receipt-item-name">${i.product_name} × ${i.quantity_sold}</span>
+        <span>${cur(i.total_revenue)}</span>
+      </div>
+    `).join("")}
+    <hr class="receipt-divider" />
+    <div class="receipt-total-row"><span>Total</span><span>${cur(total)}</span></div>
+    <div class="receipt-greeting">Thank you for shopping with us! We hope to see you again soon. 🙏</div>
+  `;
+}
+
+function printReceipt() {
+  window.print();
+}
+
+async function loadSalePageSummary() {
+  try {
+    const dash = await api("GET", "/reports/dashboard");
+    const { todaySales } = dash;
+    document.getElementById("ts-revenue").textContent = cur(todaySales.revenue);
+    document.getElementById("ts-cost").textContent    = cur(todaySales.cost);
+
+    const profit = parseFloat(todaySales.profit);
+    const tsProfit = document.getElementById("ts-profit");
+    tsProfit.textContent = cur(profit);
+    tsProfit.className = `summary-value ${profitClass(profit)}`;
+
+    document.getElementById("ts-count").textContent = todaySales.transactions;
+
+    // P&L bar
+    const pct = todaySales.revenue > 0
+      ? Math.min(100, Math.max(0, (profit / todaySales.revenue) * 100))
+      : 0;
+    document.getElementById("pnl-bar").style.width = `${pct}%`;
+    document.getElementById("pnl-label").textContent =
+      todaySales.revenue > 0
+        ? `${((profit / todaySales.revenue) * 100).toFixed(1)}% profit margin today`
+        : "No sales today yet";
+  } catch {}
+}
+
+// ════════════════════════════════════════════════ HISTORY ════════════════════
+
+async function loadHistory() {
+  // Default: last 30 days
+  if (!document.getElementById("hist-from").value) {
+    const d = new Date(); d.setDate(d.getDate() - 30);
+    document.getElementById("hist-from").value = d.toISOString().split("T")[0];
+  }
+  if (!document.getElementById("hist-to").value) {
+    document.getElementById("hist-to").value = todayISO();
+  }
+
+  const from = document.getElementById("hist-from").value;
+  const to   = document.getElementById("hist-to").value;
+
+  try {
+    const sales = await api("GET", `/sales?from=${from}&to=${to}&export=1`);
+    State.historySales = sales; // cached for spreadsheet export
+    const tbody = document.getElementById("history-tbody");
+
+    if (sales.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="10" class="empty-state">No sales in this period</td></tr>`;
+      return;
+    }
+
+    // Group joint sales (shared transaction_group) together; standalone sales
+    // (transaction_group === null) render as their own single-row entries.
+    const groups = [];
+    const seenGroups = new Set();
+    for (const s of sales) {
+      if (s.transaction_group && !seenGroups.has(s.transaction_group)) {
+        seenGroups.add(s.transaction_group);
+        groups.push({ type: "joint", items: sales.filter((x) => x.transaction_group === s.transaction_group) });
+      } else if (!s.transaction_group) {
+        groups.push({ type: "single", items: [s] });
+      }
+    }
+    // Preserve original (newest-first) ordering by each group's most recent created_at
+    groups.sort((a, b) => new Date(b.items[0].created_at) - new Date(a.items[0].created_at));
+
+    tbody.innerHTML = groups.map((g) => renderHistoryRow(g)).join("");
+  } catch (e) {
+    showToast("Error loading history: " + e.message, "error");
+  }
+}
+
+function paymentBadge(s) {
+  if (s.payment_method === "transfer") return `Transfer${s.bank_account_name ? ` (${s.bank_account_name})` : ""}`;
+  if (s.payment_method === "card") return `Card${s.pos_terminal_name ? ` (${s.pos_terminal_name})` : ""}`;
+  return "Cash";
+}
+
+function renderHistoryRow(group) {
+  const items = group.items;
+  const first = items[0];
+  const totalQty     = items.reduce((s, i) => s + i.quantity_sold, 0);
+  const totalRevenue = items.reduce((s, i) => s + Number(i.total_revenue), 0);
+  const totalCost    = items.reduce((s, i) => s + Number(i.total_cost), 0);
+  const totalProfit  = items.reduce((s, i) => s + Number(i.profit), 0);
+
+  const productCell = group.type === "joint"
+    ? items.map((i) => `${i.product_name} ×${i.quantity_sold}`).join("<br>")
+    : `<strong>${first.product_name}</strong>${first.note ? `<br><span style="font-size:11px;color:var(--text-2)">${first.note}</span>` : ""}`;
+
+  const categoryCell = group.type === "joint"
+    ? [...new Set(items.map((i) => i.category_name).filter(Boolean))].join(", ") || "—"
+    : (first.category_name || "—");
+
+  const typeBadge = group.type === "joint"
+    ? `<span class="badge badge-info">Joint (${items.length})</span>`
+    : `<span class="badge">Single</span>`;
+
+  const voidAction = group.type === "joint"
+    ? `<button class="btn btn-sm btn-danger btn-icon" onclick="voidJointSale('${first.transaction_group}')" title="Void entire joint sale">✕</button>`
+    : `<button class="btn btn-sm btn-danger btn-icon" onclick="voidSale(${first.id})" title="Void sale">✕</button>`;
+
+  return `
+    <tr>
+      <td>${fmtDate(first.sale_date)}</td>
+      <td>${typeBadge}</td>
+      <td>${productCell}</td>
+      <td>${categoryCell}</td>
+      <td class="num">${totalQty}</td>
+      <td class="num">${cur(totalRevenue)}</td>
+      <td class="num">${cur(totalCost)}</td>
+      <td class="num ${profitClass(totalProfit)}">${cur(totalProfit)}</td>
+      <td style="font-size:11px;">${paymentBadge(first)}</td>
+      <td>${voidAction}</td>
+    </tr>
+  `;
+}
+
+async function voidSale(id) {
+  if (!confirm("Void this sale? Stock will be restored.")) return;
+  try {
+    await api("DELETE", `/sales/${id}`);
+    showToast("Sale voided. Stock restored.");
+    loadHistory();
+  } catch (e) {
+    showToast(e.message, "error");
+  }
+}
+
+async function voidJointSale(transactionGroup) {
+  const items = (State.historySales || []).filter((s) => s.transaction_group === transactionGroup);
+  if (items.length === 0) return;
+  if (!confirm(`Void this entire joint sale (${items.length} items)? Stock will be restored for all of them.`)) return;
+
+  try {
+    for (const item of items) {
+      await api("DELETE", `/sales/${item.id}`);
+    }
+    showToast("Joint sale voided. Stock restored.");
+    loadHistory();
+  } catch (e) {
+    showToast(e.message, "error");
+  }
+}
+
+// ════════════════════════════════════════════════ SPREADSHEET EXPORT ═════════
+
+function exportHistoryToSpreadsheet() {
+  const sales = State.historySales || [];
+  if (sales.length === 0) { showToast("No sales to export in this date range", "warn"); return; }
+
+  const from = document.getElementById("hist-from").value;
+  const to   = document.getElementById("hist-to").value;
+
+  const rows = sales.map((s) => ({
+    Date: s.sale_date,
+    Type: s.transaction_group ? "Joint" : "Single",
+    Product: s.product_name,
+    Category: s.category_name || "",
+    Quantity: s.quantity_sold,
+    "Unit Price": Number(s.unit_price),
+    Revenue: Number(s.total_revenue),
+    Cost: Number(s.total_cost),
+    Profit: Number(s.profit),
+    "Payment Method": paymentMethodLabel(s.payment_method),
+    "Bank/POS Detail": s.bank_account_name || s.pos_terminal_name || "",
+    Note: s.note || "",
+  }));
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, "Sales");
+  XLSX.writeFile(wb, `StoreKeeper360-Sales-${from}-to-${to}.xlsx`);
+  showToast("Spreadsheet downloaded");
+}
+
+function exportTodaysSalesToSpreadsheet() {
+  const today = todayISO();
+  api("GET", `/sales?from=${today}&to=${today}&export=1`).then((sales) => {
+    if (sales.length === 0) { showToast("No sales recorded today yet", "warn"); return; }
+    const rows = sales.map((s) => ({
+      Date: s.sale_date,
+      Type: s.transaction_group ? "Joint" : "Single",
+      Product: s.product_name,
+      Category: s.category_name || "",
+      Quantity: s.quantity_sold,
+      "Unit Price": Number(s.unit_price),
+      Revenue: Number(s.total_revenue),
+      Cost: Number(s.total_cost),
+      Profit: Number(s.profit),
+      "Payment Method": paymentMethodLabel(s.payment_method),
+      "Bank/POS Detail": s.bank_account_name || s.pos_terminal_name || "",
+      Note: s.note || "",
+    }));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, "Today's Sales");
+    XLSX.writeFile(wb, `StoreKeeper360-DailySales-${today}.xlsx`);
+    showToast("Today's sales spreadsheet downloaded");
+  }).catch((e) => showToast(e.message, "error"));
+}
+
+// ════════════════════════════════════════════════ REPORTS ════════════════════
+
+async function loadReports() {
+  // Default date range: current month
+  if (!document.getElementById("rpt-from").value) {
+    document.getElementById("rpt-from").value = new Date().toISOString().slice(0, 7) + "-01";
+  }
+  if (!document.getElementById("rpt-to").value) {
+    document.getElementById("rpt-to").value = todayISO();
+  }
+
+  const from = document.getElementById("rpt-from").value;
+  const to   = document.getElementById("rpt-to").value;
+  const year = document.getElementById("rpt-year").value;
+
+  try {
+    const [daily, monthly, products, categories] = await Promise.all([
+      api("GET", `/reports/daily?from=${from}&to=${to}`),
+      api("GET", `/reports/monthly?year=${year}`),
+      api("GET", `/reports/products?from=${from}&to=${to}&limit=15`),
+      api("GET", `/reports/categories?from=${from}&to=${to}`),
+    ]);
+
+    // ── Daily P&L Chart
+    buildChart("chart-pnl", {
+      type: "bar",
+      data: {
+        labels: daily.map((d) => d.sale_date.slice(5)),
+        datasets: [
+          {
+            label: "Revenue",
+            data: daily.map((d) => d.revenue),
+            backgroundColor: "rgba(16,185,129,0.55)",
+            borderRadius: 3,
+          },
+          {
+            label: "Cost",
+            data: daily.map((d) => d.cost),
+            backgroundColor: "rgba(239,68,68,0.45)",
+            borderRadius: 3,
+          },
+          {
+            type: "line",
+            label: "Profit",
+            data: daily.map((d) => d.profit),
+            borderColor: "#3B82F6",
+            backgroundColor: "transparent",
+            pointRadius: 3,
+            tension: 0.35,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { labels: { boxWidth: 10, font: { size: 11 } } } },
+        scales: { y: { ticks: { callback: (v) => `${State.user?.currency || "₦"}${v.toLocaleString()}` } } },
+      },
+    });
+
+    // ── Monthly Chart
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    buildChart("chart-monthly-rpt", {
+      type: "line",
+      data: {
+        labels: monthly.map((m) => monthNames[parseInt(m.month) - 1]),
+        datasets: [
+          {
+            label: "Revenue",
+            data: monthly.map((m) => m.revenue),
+            borderColor: "#10B981",
+            backgroundColor: "rgba(16,185,129,0.07)",
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+          },
+          {
+            label: "Profit",
+            data: monthly.map((m) => m.profit),
+            borderColor: "#3B82F6",
+            backgroundColor: "rgba(59,130,246,0.06)",
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { boxWidth: 10, font: { size: 11 } } } },
+        scales: { y: { ticks: { callback: (v) => `${State.user?.currency || "₦"}${v.toLocaleString()}` } } },
+      },
+    });
+
+    // ── Category Donut
+    if (categories.length > 0) {
+      buildChart("chart-category", {
+        type: "doughnut",
+        data: {
+          labels: categories.map((c) => c.category),
+          datasets: [{
+            data: categories.map((c) => c.revenue),
+            backgroundColor: ["#10B981","#3B82F6","#F59E0B","#A855F7","#EF4444","#06B6D4","#F97316"],
+            borderWidth: 2,
+            borderColor: "#161B22",
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "65%",
+          plugins: {
+            legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 }, padding: 8 } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${cur(ctx.raw)} (${((ctx.raw / categories.reduce((a, c) => a + c.revenue, 0)) * 100).toFixed(1)}%)`,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // ── Product Performance Table
+    const tbody = document.getElementById("product-perf-tbody");
+    if (products.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No sales in this period</td></tr>`;
+    } else {
+      tbody.innerHTML = products.map((p) => `
+        <tr>
+          <td><strong>${p.name}</strong><br><span style="font-size:11px;color:var(--text-2)">${p.category || "—"}</span></td>
+          <td class="num">${p.units_sold}</td>
+          <td class="num">${cur(p.revenue)}</td>
+          <td class="num ${profitClass(p.profit)}">${cur(p.profit)}</td>
+        </tr>
+      `).join("");
+    }
+
+  } catch (e) {
+    showToast("Error loading reports: " + e.message, "error");
+  }
+}
+
+// ════════════════════════════════════════════════ SETTINGS ═══════════════════
+
+async function loadSettings() {
+  try {
+    const user = await api("GET", "/auth/profile");
+    document.getElementById("set-name").value     = user.name;
+    document.getElementById("set-store").value    = user.store_name;
+    document.getElementById("set-currency").value = user.currency;
+  } catch {}
+
+  await loadCategories();
+  renderCategoriesList();
+  await loadBankAccountsAndTerminals();
+}
+
+function renderCategoriesList() {
+  const el = document.getElementById("categories-list");
+  if (State.categories.length === 0) {
+    el.innerHTML = '<div style="color:var(--text-2);font-size:12px;padding:8px 0">No categories yet</div>';
+    return;
+  }
+  el.innerHTML = State.categories.map((c) => `
+    <div class="category-item">
+      <span>${c.name}</span>
+    </div>
+  `).join("");
+}
+
+async function saveSettings() {
+  const name       = document.getElementById("set-name").value.trim();
+  const store_name = document.getElementById("set-store").value.trim();
+  const currency   = document.getElementById("set-currency").value.trim();
+  try {
+    await api("PUT", "/auth/profile", { name, store_name, currency });
+    State.profile = { ...State.profile, name, store_name, currency };
+    document.getElementById("sidebar-user-name").textContent = name;
+    document.getElementById("sidebar-store-name").textContent = store_name;
+    document.getElementById("user-avatar").textContent = name?.[0]?.toUpperCase() || "U";
+    showToast("Settings saved");
+  } catch (e) {
+    showToast(e.message, "error");
+  }
+}
+
+function openAddCategoryModal() {
+  document.getElementById("cat-name").value = "";
+  document.getElementById("category-modal").classList.remove("hidden");
+}
+
+async function submitCategory() {
+  const name = document.getElementById("cat-name").value.trim();
+  if (!name) { showToast("Enter a category name", "warn"); return; }
+  try {
+    await api("POST", "/products/meta/categories", { name });
+    showToast(`Category "${name}" added`);
+    closeModal("category-modal");
+    await loadCategories();
+    renderCategoriesList();
+  } catch (e) {
+    showToast(e.message, "error");
+  }
+}
+
+// ════════════════════════════════════════════════ BANK ACCOUNTS & POS ════════
+
+async function loadBankAccountsAndTerminals() {
+  try {
+    State.bankAccounts = await api("GET", "/settings/bank-accounts");
+  } catch { State.bankAccounts = []; }
+  try {
+    State.posTerminals = await api("GET", "/settings/pos-terminals");
+  } catch { State.posTerminals = []; }
+
+  renderBankAccountsList();
+  renderPosTerminalsList();
+}
+
+function renderBankAccountsList() {
+  const el = document.getElementById("bank-accounts-list");
+  if (!State.bankAccounts || State.bankAccounts.length === 0) {
+    el.innerHTML = '<div style="color:var(--text-2);font-size:12px;padding:8px 0">No bank accounts added yet</div>';
+    return;
+  }
+  el.innerHTML = State.bankAccounts.map((b) => `
+    <div class="category-item">
+      <div>
+        <div style="font-weight:600;">${b.bank_name}</div>
+        <div style="font-size:11px;color:var(--text-2)">${b.account_number} · ${b.account_name}</div>
+      </div>
+      <button class="btn btn-sm btn-ghost btn-icon" onclick="deleteBankAccount(${b.id})" title="Remove">✕</button>
+    </div>
+  `).join("");
+}
+
+function renderPosTerminalsList() {
+  const el = document.getElementById("pos-terminals-list");
+  if (!State.posTerminals || State.posTerminals.length === 0) {
+    el.innerHTML = '<div style="color:var(--text-2);font-size:12px;padding:8px 0">No POS terminals added yet</div>';
+    return;
+  }
+  el.innerHTML = State.posTerminals.map((p) => `
+    <div class="category-item">
+      <div>
+        <div style="font-weight:600;">${p.terminal_name}</div>
+        <div style="font-size:11px;color:var(--text-2)">${[p.provider, p.terminal_id].filter(Boolean).join(" · ") || "—"}</div>
+      </div>
+      <button class="btn btn-sm btn-ghost btn-icon" onclick="deletePosTerminal(${p.id})" title="Remove">✕</button>
+    </div>
+  `).join("");
+}
+
+function openAddBankAccountModal() {
+  document.getElementById("ba-bank-name").value = "";
+  document.getElementById("ba-account-number").value = "";
+  document.getElementById("ba-account-name").value = "";
+  document.getElementById("ba-error").classList.add("hidden");
+  document.getElementById("bank-account-modal").classList.remove("hidden");
+}
+
+async function submitBankAccount() {
+  const bank_name      = document.getElementById("ba-bank-name").value.trim();
+  const account_number = document.getElementById("ba-account-number").value.trim();
+  const account_name   = document.getElementById("ba-account-name").value.trim();
+  const errEl = document.getElementById("ba-error");
+  errEl.classList.add("hidden");
+
+  if (!bank_name || !account_number || !account_name) {
+    errEl.textContent = "All fields are required.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+
+  try {
+    await api("POST", "/settings/bank-accounts", { bank_name, account_number, account_name });
+    showToast("Bank account added");
+    closeModal("bank-account-modal");
+    await loadBankAccountsAndTerminals();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove("hidden");
+  }
+}
+
+async function deleteBankAccount(id) {
+  if (!confirm("Remove this bank account? It will still show correctly on past receipts.")) return;
+  try {
+    await api("DELETE", `/settings/bank-accounts/${id}`);
+    showToast("Bank account removed");
+    await loadBankAccountsAndTerminals();
+  } catch (e) {
+    showToast(e.message, "error");
+  }
+}
+
+function openAddPosTerminalModal() {
+  document.getElementById("pt-name").value = "";
+  document.getElementById("pt-provider").value = "";
+  document.getElementById("pt-terminal-id").value = "";
+  document.getElementById("pt-error").classList.add("hidden");
+  document.getElementById("pos-terminal-modal").classList.remove("hidden");
+}
+
+async function submitPosTerminal() {
+  const terminal_name = document.getElementById("pt-name").value.trim();
+  const provider       = document.getElementById("pt-provider").value.trim();
+  const terminal_id    = document.getElementById("pt-terminal-id").value.trim();
+  const errEl = document.getElementById("pt-error");
+  errEl.classList.add("hidden");
+
+  if (!terminal_name) {
+    errEl.textContent = "Terminal name is required.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+
+  try {
+    await api("POST", "/settings/pos-terminals", { terminal_name, provider, terminal_id });
+    showToast("POS terminal added");
+    closeModal("pos-terminal-modal");
+    await loadBankAccountsAndTerminals();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove("hidden");
+  }
+}
+
+async function deletePosTerminal(id) {
+  if (!confirm("Remove this POS terminal? It will still show correctly on past receipts.")) return;
+  try {
+    await api("DELETE", `/settings/pos-terminals/${id}`);
+    showToast("POS terminal removed");
+    await loadBankAccountsAndTerminals();
+  } catch (e) {
+    showToast(e.message, "error");
+  }
+}
+
+// ════════════════════════════════════════════════ MONTHLY AUTO REPORT ════════
+
+function getPreviousMonthRange() {
+  const now = new Date();
+  const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthEnd = new Date(firstOfThisMonth.getTime() - 86400000); // day before the 1st
+  const year = lastMonthEnd.getFullYear();
+  const month = lastMonthEnd.getMonth() + 1; // 1-indexed
+  const monthStr = String(month).padStart(2, "0");
+  const from = `${year}-${monthStr}-01`;
+  const to = `${year}-${monthStr}-${String(lastMonthEnd.getDate()).padStart(2, "0")}`;
+  const label = lastMonthEnd.toLocaleDateString("en-NG", { month: "long", year: "numeric" });
+  return { key: `${year}-${monthStr}`, year, month, from, to, label };
+}
+
+function checkMonthlyReportBanner() {
+  const { key, label, from, to } = getPreviousMonthRange();
+  const seenKey = `sk_monthly_report_seen_${key}`;
+  if (localStorage.getItem(seenKey)) return; // already dismissed or downloaded
+
+  State.pendingMonthlyReport = { key, label, from, to };
+  document.getElementById("monthly-report-title").textContent = `${label} Report Ready`;
+  document.getElementById("monthly-report-subtitle").textContent =
+    `Opening stock, restocks, and sales for ${label} are ready to download.`;
+  document.getElementById("monthly-report-banner").classList.remove("hidden");
+}
+
+function dismissMonthlyReportBanner() {
+  if (State.pendingMonthlyReport) {
+    localStorage.setItem(`sk_monthly_report_seen_${State.pendingMonthlyReport.key}`, "1");
+  }
+  document.getElementById("monthly-report-banner").classList.add("hidden");
+}
+
+async function downloadMonthlyReport() {
+  const report = State.pendingMonthlyReport;
+  if (!report) return;
+
+  try {
+    const [sales, stockHistory] = await Promise.all([
+      api("GET", `/sales?from=${report.from}&to=${report.to}&export=1`),
+      api("GET", `/reports/stock-history?export=1`),
+    ]);
+
+    const salesRows = sales.map((s) => ({
+      Date: s.sale_date,
+      Type: s.transaction_group ? "Joint" : "Single",
+      Product: s.product_name,
+      Category: s.category_name || "",
+      Quantity: s.quantity_sold,
+      "Unit Price": Number(s.unit_price),
+      Revenue: Number(s.total_revenue),
+      Cost: Number(s.total_cost),
+      Profit: Number(s.profit),
+      "Payment Method": paymentMethodLabel(s.payment_method),
+    }));
+
+    const openingStockRows = stockHistory
+      .filter((r) => r.reason === "initial")
+      .map((r) => ({ Product: r.product_name, "Opening Quantity": r.delta, "Date Added": fmtDate(r.created_at) }));
+
+    const restockRows = stockHistory
+      .filter((r) => r.reason === "restock" && r.created_at >= report.from && r.created_at <= report.to + "T23:59:59")
+      .map((r) => ({ Product: r.product_name, "Quantity Added": r.delta, Note: r.note || "", Date: fmtDate(r.created_at) }));
+
+    const totalRevenue = salesRows.reduce((s, r) => s + r.Revenue, 0);
+    const totalProfit  = salesRows.reduce((s, r) => s + r.Profit, 0);
+    const summaryRows = [
+      { Metric: "Month", Value: report.label },
+      { Metric: "Total Transactions", Value: salesRows.length },
+      { Metric: "Total Revenue", Value: totalRevenue },
+      { Metric: "Total Profit", Value: totalProfit },
+      { Metric: "Restocks Recorded", Value: restockRows.length },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "Summary");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(salesRows), "Sales");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(restockRows), "Restocks");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(openingStockRows), "Opening Stock");
+    XLSX.writeFile(wb, `StoreKeeper360-MonthlyReport-${report.key}.xlsx`);
+
+    localStorage.setItem(`sk_monthly_report_seen_${report.key}`, "1");
+    document.getElementById("monthly-report-banner").classList.add("hidden");
+    showToast("Monthly report downloaded");
+  } catch (e) {
+    showToast("Could not generate monthly report: " + e.message, "error");
+  }
+}
+
+// ════════════════════════════════════════════════ MODALS ════════════════════
+
+function closeModal(id) {
+  document.getElementById(id).classList.add("hidden");
+}
+
+// Close modal on backdrop click
+document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.classList.add("hidden");
+  });
+});
+
+// Close sale dropdown on outside click
+document.addEventListener("click", (e) => {
+  const dd = document.getElementById("sale-product-results");
+  if (!e.target.closest(".sale-search")) dd?.classList.add("hidden");
+});
+
+// ════════════════════════════════════════════════ KEYBOARD ═══════════════════
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    document.querySelectorAll(".modal-overlay:not(.hidden)").forEach((m) => m.classList.add("hidden"));
+  }
+});
+
+document.getElementById("login-password")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") handleLogin();
+});
+
+document.getElementById("reg-password-confirm")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") handleRegister();
+});
+
+// ════════════════════════════════════════════════ INIT ═══════════════════════
+
+// Keep State.session in sync whenever Supabase refreshes/changes the session
+// (e.g. automatic token refresh, or a session established in another tab)
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === "PASSWORD_RECOVERY") {
+    showPasswordResetScreen();
+    return;
+  }
+  if (event === "SIGNED_OUT") {
+    State.session = null;
+    State.profile = null;
+  } else if (session) {
+    State.session = session;
+  }
+});
+
+(async function init() {
+  const isRecoveryLink = window.location.hash.includes("type=recovery") || window.location.search.includes("type=recovery");
+
+  if (isRecoveryLink) {
+    // Give supabase-js a moment to parse the URL and fire PASSWORD_RECOVERY
+    await new Promise((r) => setTimeout(r, 800));
+    if (!document.getElementById("password-reset-screen").classList.contains("hidden")) return; // already showing the form
+
+    // No recovery event fired within the window — link is invalid or expired
+    document.getElementById("auth-screen").classList.add("hidden");
+    document.getElementById("password-reset-screen").classList.remove("hidden");
+    document.getElementById("rp-loading").classList.add("hidden");
+    document.getElementById("rp-form").classList.add("hidden");
+    document.getElementById("rp-invalid").classList.remove("hidden");
+    return;
+  }
+
+  const { data } = await supabase.auth.getSession();
+  if (data.session) {
+    State.session = data.session;
+    await loadProfileAndBoot();
+  } else {
+    document.getElementById("auth-screen").classList.remove("hidden");
+  }
+})();
+
+// ════════════════════════════════════════════════ PASSWORD RESET SCREEN ══════
+// Reached when a user clicks the reset link in their email — merged into this
+// single page instead of a separate reset-password.html file.
+
+function showPasswordResetScreen() {
+  document.getElementById("auth-screen").classList.add("hidden");
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("password-reset-screen").classList.remove("hidden");
+  document.getElementById("rp-loading").classList.add("hidden");
+  document.getElementById("rp-invalid").classList.add("hidden");
+  document.getElementById("rp-success").classList.add("hidden");
+  document.getElementById("rp-form").classList.remove("hidden");
+  document.getElementById("rp-password").value = "";
+  document.getElementById("rp-password-confirm").value = "";
+  document.getElementById("rp-error").classList.add("hidden");
+}
+
+function closeResetPasswordScreen() {
+  document.getElementById("password-reset-screen").classList.add("hidden");
+  document.getElementById("auth-screen").classList.remove("hidden");
+  switchAuthTab("login");
+  // Clear the recovery token out of the URL so refreshing doesn't re-trigger it
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+async function submitPasswordReset() {
+  const password  = document.getElementById("rp-password").value;
+  const confirmPw = document.getElementById("rp-password-confirm").value;
+  const errEl = document.getElementById("rp-error");
+  errEl.classList.add("hidden");
+
+  if (!password || password.length < 6) {
+    errEl.textContent = "Password must be at least 6 characters long.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+  if (password !== confirmPw) {
+    errEl.textContent = "Passwords do not match.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.classList.remove("hidden");
+    return;
+  }
+
+  document.getElementById("rp-form").classList.add("hidden");
+  document.getElementById("rp-success").classList.remove("hidden");
+}
+
+document.getElementById("rp-password-confirm")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") submitPasswordReset();
+});
+
+</script>
+</body>
+</html>
