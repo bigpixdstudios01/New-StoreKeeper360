@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -1974,6 +1974,15 @@ document.addEventListener("DOMContentLoaded", applyThemeIcon);
 
 // ── SUPABASE CLIENT ────────────────────────────────────────────────────────────
 // SUPABASE_URL and SUPABASE_ANON_KEY are declared above, inline in this file
+if (!window.supabase) {
+  document.write(
+    '<div style="background:#EF4444;color:#fff;padding:16px;font-family:sans-serif;text-align:center;">' +
+    'Could not load a required library (Supabase). Please check your internet connection and reload the page. ' +
+    'If this keeps happening, the CDN script may be blocked by your browser or network.' +
+    '</div>'
+  );
+  throw new Error("window.supabase is not defined — the Supabase CDN script failed to load.");
+}
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
@@ -2047,6 +2056,7 @@ function todayISO() {
 
 // ── CHART HELPER ──────────────────────────────────────────────────────────────
 function buildChart(id, config) {
+  if (typeof Chart === "undefined") return; // Chart.js CDN failed to load
   if (State.chartInstances[id]) {
     State.chartInstances[id].destroy();
     delete State.chartInstances[id];
@@ -2057,6 +2067,7 @@ function buildChart(id, config) {
 }
 
 function applyChartTheme() {
+  if (typeof Chart === "undefined") return; // Chart.js CDN failed to load — charts just won't render, rest of the app still works
   const styles = getComputedStyle(document.documentElement);
   Chart.defaults.color = styles.getPropertyValue("--text-2").trim() || "#8B949E";
   Chart.defaults.borderColor = styles.getPropertyValue("--border").trim() || "#30363D";
@@ -3026,6 +3037,7 @@ async function voidJointSale(transactionGroup) {
 // ════════════════════════════════════════════════ SPREADSHEET EXPORT ═════════
 
 function exportHistoryToSpreadsheet() {
+  if (typeof XLSX === "undefined") { showToast("Export library failed to load. Check your connection and reload.", "error"); return; }
   const sales = State.historySales || [];
   if (sales.length === 0) { showToast("No sales to export in this date range", "warn"); return; }
 
@@ -3055,6 +3067,7 @@ function exportHistoryToSpreadsheet() {
 }
 
 function exportTodaysSalesToSpreadsheet() {
+  if (typeof XLSX === "undefined") { showToast("Export library failed to load. Check your connection and reload.", "error"); return; }
   const today = todayISO();
   api("GET", `/sales?from=${today}&to=${today}&export=1`).then((sales) => {
     if (sales.length === 0) { showToast("No sales recorded today yet", "warn"); return; }
@@ -3457,6 +3470,7 @@ function dismissMonthlyReportBanner() {
 }
 
 async function downloadMonthlyReport() {
+  if (typeof XLSX === "undefined") { showToast("Export library failed to load. Check your connection and reload.", "error"); return; }
   const report = State.pendingMonthlyReport;
   if (!report) return;
 
