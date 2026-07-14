@@ -2,6 +2,38 @@
 <html lang="en">
 <head>
   <script>
+    // ── ON-SCREEN ERROR REPORTER ─────────────────────────────────────────────
+    // Shows any JavaScript error directly on the page as a red banner, so we
+    // can diagnose issues without needing browser DevTools (useful on mobile).
+    (function () {
+      function showErrorBanner(message) {
+        var el = document.getElementById("__error_banner__");
+        if (!el) {
+          el = document.createElement("div");
+          el.id = "__error_banner__";
+          el.style.cssText =
+            "position:fixed;top:0;left:0;right:0;z-index:99999;background:#EF4444;" +
+            "color:#fff;padding:14px;font-family:monospace;font-size:12px;" +
+            "white-space:pre-wrap;word-break:break-word;max-height:40vh;overflow:auto;";
+          document.documentElement.appendChild(el);
+        }
+        var line = document.createElement("div");
+        line.style.marginBottom = "8px";
+        line.style.borderBottom = "1px solid rgba(255,255,255,0.3)";
+        line.style.paddingBottom = "8px";
+        line.textContent = message;
+        el.appendChild(line);
+      }
+      window.addEventListener("error", function (e) {
+        showErrorBanner("JS Error: " + e.message + "\n  at " + e.filename + ":" + e.lineno + ":" + e.colno);
+      });
+      window.addEventListener("unhandledrejection", function (e) {
+        var reason = e.reason && e.reason.message ? e.reason.message : String(e.reason);
+        showErrorBanner("Unhandled Promise Rejection: " + reason);
+      });
+    })();
+  </script>
+  <script>
     // Runs before anything renders, so there's no flash of the wrong theme.
     (function () {
       const saved = localStorage.getItem("sk_theme");
